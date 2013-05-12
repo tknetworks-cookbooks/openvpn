@@ -14,31 +14,30 @@
 # limitations under the License.
 #
 
-directory node[:openvpn][:dir] do
+directory node['openvpn']['dir'] do
   action :create
 end
 
-if node[:platform] == "openbsd"
-  template "/etc/rc.d/openvpn" do
-    owner "root"
-    group node[:etc][:passwd][:root][:gid]
-    mode 0555
-    source "openvpn.rc"
-  end
+template "/etc/rc.d/openvpn" do
+  owner "root"
+  group node['etc']['passwd']['root']['gid']
+  mode 0555
+  source "openvpn.rc.erb"
+  only_if {
+    node['platform'] == 'openbsd'
+  }
 end
 
-if node[:platform] != "openbsd"
-  package node[:openvpn][:package] do
-    action :install
-    source "ports" if node[:platform] == "freebsd"
-  end
+package node['openvpn']['package'] do
+  action :install
+  source "ports" if node['platform'] == "freebsd"
 end
 
 # generate dh params
 execute "openvpn-generate-dh-params" do
-  command "openssl dhparam -out #{node[:openvpn][:ssl][:dh]} " +
-          "#{node[:openvpn][:ssl][:dh_bit]}"
+  command "openssl dhparam -out #{node['openvpn']['ssl']['dh']} " +
+          node['openvpn']['ssl']['dh_bit']
   not_if do
-    ::File.exists?(node[:openvpn][:ssl][:dh])
+    ::File.exists?(node['openvpn']['ssl']['dh'])
   end
 end

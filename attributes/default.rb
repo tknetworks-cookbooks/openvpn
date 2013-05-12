@@ -1,21 +1,36 @@
+#
+# Author:: Ken-ichi TANABE (<nabeken@tknetworks.org>)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 case platform
 when "freebsd"
-  default[:openvpn][:dir] = "/usr/local/etc/openvpn"
-  default[:openvpn][:uid] = "nobody"
-  default[:openvpn][:gid] = "nogroup"
-  default[:openvpn][:service] = "openvpn"
-  default[:openvpn][:package] = "openvpn"
+  default['openvpn']['dir'] = "/usr/local/etc/openvpn"
+  default['openvpn']['uid'] = "nobody"
+  default['openvpn']['gid'] = "nogroup"
+  default['openvpn']['service'] = "openvpn"
+  default['openvpn']['package'] = "openvpn"
 else
-  default[:openvpn][:dir] = "/etc/openvpn"
-  default[:openvpn][:uid] = "nobody"
-  default[:openvpn][:gid] = "nogroup"
-  default[:openvpn][:service] = "openvpn"
-  default[:openvpn][:package] = "openvpn"
+  default['openvpn']['dir'] = "/etc/openvpn"
+  default['openvpn']['uid'] = "nobody"
+  default['openvpn']['gid'] = "nogroup"
+  default['openvpn']['service'] = "openvpn"
+  default['openvpn']['package'] = "openvpn"
 end
 
-default[:openvpn][:ssl][:dh] = "#{default[:openvpn][:dir]}/dh.pem"
-default[:openvpn][:ssl][:dh_bit] = "2048"
-default[:openvpn][:max_clients] = 10
+default['openvpn']['ssl']['dh'] = "#{default['openvpn']['dir']}/dh.pem"
+default['openvpn']['ssl']['dh_bit'] = "2048"
+default['openvpn']['max_clients'] = 10
 
 # must be set via role
-default[:openvpn][:ssl][:ca] = ""
+default['openvpn']['ssl']['ca'] = ""

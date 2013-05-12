@@ -35,17 +35,17 @@ define :openvpn_server,
   if !params[:use_tls]
     # retrive secret key from encryped databag
     ovpn_databag = Chef::EncryptedDataBagItem.load('openvpn', params[:name])
-    secret = "#{node[:openvpn][:dir]}/#{params[:name]}.key"
+    secret = "#{node['openvpn']['dir']}/#{params[:name]}.key"
     file secret do
-      owner node[:openvpn][:uid]
-      group node[:openvpn][:gid]
+      owner node['openvpn']['uid']
+      group node['openvpn']['gid']
       mode  0600
       content ovpn_databag["key"]
       backup false
     end
   end
 
-  devname = case node[:platform]
+  devname = case node['platform']
             when "openbsd"
               "tun#{params[:dev_index]}"
             else
@@ -53,11 +53,11 @@ define :openvpn_server,
             end
 
   begin
-    t = resources("template[#{node[:openvpn][:dir]}/#{params[:name]}.conf]")
+    t = resources("template[#{node['openvpn']['dir']}/#{params[:name]}.conf.erb]")
   rescue
-    t = template "#{node[:openvpn][:dir]}/#{params[:name]}.conf" do
-          owner node[:openvpn][:uid]
-          group node[:openvpn][:gid]
+    t = template "#{node['openvpn']['dir']}/#{params[:name]}.conf.erb" do
+          owner node['openvpn']['uid']
+          group node['openvpn']['gid']
           mode  0600
           cookbook "openvpn"
           variables({
@@ -97,10 +97,10 @@ define :openvpn_client,
   if !params[:use_tls]
     # retrive secret key from encryped databag
     ovpn_databag = Chef::EncryptedDataBagItem.load('openvpn', params[:name])
-    secret = "#{node[:openvpn][:dir]}/#{params[:name]}.key"
+    secret = "#{node['openvpn']['dir']}/#{params[:name]}.key"
     file secret do
-      owner node[:openvpn][:uid]
-      group node[:openvpn][:gid]
+      owner node['openvpn']['uid']
+      group node['openvpn']['gid']
       mode  0600
       content ovpn_databag["key"]
       backup false
@@ -109,7 +109,7 @@ define :openvpn_client,
 
   # retrive a parameter for ifconfig from databag
   if params[:ifconfig] == :databag
-    ifconfig = data_bag_item('openvpn', "ifconfig_#{params[:name]}")[node[:fqdn]]
+    ifconfig = data_bag_item('openvpn', "ifconfig_#{params[:name]}")[node['fqdn']]
   else
     ifconfig = params[:ifconfig]
   end
@@ -127,7 +127,7 @@ define :openvpn_client,
   end
 
   if !params[:dev_index].nil?
-    devname = case node[:platform]
+    devname = case node['platform']
               when "openbsd"
                 "tun#{params[:dev_index]}"
               else
@@ -135,13 +135,13 @@ define :openvpn_client,
               end
   end
 
-  config = "#{node[:openvpn][:dir]}/#{params[:name]}_client.conf"
+  config = "#{node['openvpn']['dir']}/#{params['name']}_client.conf.erb"
   begin
     t = resources("template[#{config}]")
   rescue
     t = template config do
-          owner node[:openvpn][:uid]
-          group node[:openvpn][:gid]
+          owner node['openvpn']['uid']
+          group node['openvpn']['gid']
           mode  0600
           cookbook "openvpn"
           variables({
@@ -155,8 +155,8 @@ define :openvpn_client,
           #notifies :restart, "service[#{node[:openvpn][:service]}]"
         end
   end
-  if node[:platform] =~ /^(free|open)bsd/
-    prefix = node[:platform] == "freebsd" ? "/usr/local" : ""
+  if node['platform'] =~ /^(free|open)bsd/
+    prefix = node['platform'] == "freebsd" ? "/usr/local" : ""
     link "#{prefix}/etc/rc.d/openvpn_#{params[:name]}_client" do
       to "#{prefix}/etc/rc.d/openvpn"
     end
@@ -164,13 +164,13 @@ define :openvpn_client,
 
   # registering service
   if params[:service]
-    case node[:platform]
+    case node['platform']
     when "openbsd"
       openbsd_pkg_script "openvpn_#{params[:name]}_client" do
         action [:enable, :start]
       end
     when "freebsd"
-      link "#{node[:openvpn][:dir]}/openvpn_#{params[:name]}_client.conf" do
+      link "#{node['openvpn']['dir']}/openvpn_#{params[:name]}_client.conf" do
         to config
       end
       execute "openvpn-freebsd-add-#{params[:name]}_client_if" do
@@ -190,7 +190,7 @@ define :openvpn_client,
         ignore_failure true
       end
     else
-      service node[:openvpn][:service] do
+      service node['openvpn']['service'] do
         action [:enable, :start]
       end
     end
