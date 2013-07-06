@@ -30,7 +30,7 @@ describe 'openvpn::server_test' do
     chef_run.converge 'openvpn::server_test'
     ['ca /etc/ssl/demoCA/demoCA.crt',
      'cert /etc/ssl/demoCA/demoCA.crt',
-     'key /etc/ssl/demoCA/demoCA-without-pass.key',
+     'key /etc/ssl/demoCA/demoCA.key',
      'dev tun0',
      'dev-type tap',
      'proto udp',
