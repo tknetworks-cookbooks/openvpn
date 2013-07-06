@@ -13,30 +13,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+require 'minitest/spec'
 
-directory node['openvpn']['dir'] do
-  action :create
-end
+describe_recipe 'openvpn::default' do
+  it 'installs openvpn' do
+    package('openvpn').must_be_installed
+  end
 
-template "/etc/rc.d/openvpn" do
-  owner "root"
-  group node['etc']['passwd']['root']['gid']
-  mode 0555
-  source "openvpn.rc.erb"
-  only_if {
-    node['platform'] == 'openbsd'
-  }
-end
+  it 'creates /etc/openvpn' do
+    file(node['openvpn']['dir']).must_exist
+  end
 
-package node['openvpn']['package'] do
-  action :install
-  source "ports" if node['platform'] == "freebsd"
-end
+  it 'starts openvpn' do
+    assert_sh "pgrep openvpn"
+  end
 
-# generate dh params
-execute "openvpn-generate-dh-params" do
-  command "openssl dhparam -out %s %s" % [node['openvpn']['ssl']['dh'], node['openvpn']['ssl']['dh_bit']]
-  not_if do
-    ::File.exists?(node['openvpn']['ssl']['dh'])
+  it 'creates /etc/openvpn/dh.pem' do
+    dh = file(node['openvpn']['ssl']['dh'])
+    dh.must_exist
+    dh.must_include 'BEGIN DH PARAMETERS'
   end
 end

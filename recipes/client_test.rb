@@ -13,30 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+directory "/etc/ssl/demoCA"
+cookbook_file "/etc/ssl/demoCA/demoCA.crt"
+cookbook_file "/etc/ssl/demoCA/demoCA-client.crt"
+cookbook_file "/etc/ssl/demoCA/demoCA-client.key"
 
-directory node['openvpn']['dir'] do
-  action :create
-end
-
-template "/etc/rc.d/openvpn" do
-  owner "root"
-  group node['etc']['passwd']['root']['gid']
-  mode 0555
-  source "openvpn.rc.erb"
-  only_if {
-    node['platform'] == 'openbsd'
-  }
-end
-
-package node['openvpn']['package'] do
-  action :install
-  source "ports" if node['platform'] == "freebsd"
-end
-
-# generate dh params
-execute "openvpn-generate-dh-params" do
-  command "openssl dhparam -out %s %s" % [node['openvpn']['ssl']['dh'], node['openvpn']['ssl']['dh_bit']]
-  not_if do
-    ::File.exists?(node['openvpn']['ssl']['dh'])
-  end
+openvpn_client "gw" do
+  port 1195
+  proto "udp"
+  dev_index 0
+  remote "192.168.67.10"
+  ifconfig :databag
+  ca "/etc/ssl/demoCA/demoCA.crt"
+  cert "/etc/ssl/demoCA/demoCA-client.crt"
+  key "/etc/ssl/demoCA/demoCA-client.key"
 end

@@ -1,0 +1,4 @@
+{
+  "id": "ifconfig_gw",
+  "vagrant-openbsd2.example.org": "10.7.30.12 255.255.255.0"
+}

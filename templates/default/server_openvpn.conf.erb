@@ -21,7 +21,7 @@ tls-server
 ca <%= @params[:ca] %>
 cert <%= @params[:cert] %>
 key <%= @params[:key] %>
-dh <%= node[:openvpn][:ssl][:dh] %>
+dh <%= node['openvpn']['ssl']['dh'] %>
 
 <% else %>
 secret <%= @secret %>
@@ -38,7 +38,7 @@ keepalive 10 120
 
 # The maximum number of concurrently connected
 # clients we want to allow.
-max-clients <%= node[:openvpn][:max_clients] %>
+max-clients <%= node['openvpn']['max_clients'] %>
 
 client-to-client
 
@@ -47,8 +47,8 @@ client-to-client
 #
 # You can uncomment this out on
 # non-Windows systems.
-user <%= node[:openvpn][:uid] %>
-group <%= node[:openvpn][:gid] %>
+user <%= node['openvpn']['uid'] %>
+group <%= node['openvpn']['gid'] %>
 
 # The persist options will try to avoid
 # accessing certain resources on restart

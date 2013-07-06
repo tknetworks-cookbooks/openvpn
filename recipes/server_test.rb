@@ -13,30 +13,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+directory "/etc/ssl/demoCA"
+cookbook_file "/etc/ssl/demoCA/demoCA.crt"
+cookbook_file "/etc/ssl/demoCA/demoCA.key"
 
-directory node['openvpn']['dir'] do
-  action :create
+openvpn_server "gw" do
+  local_ip '192.168.67.10'
+  port 1195
+  proto "udp"
+  dev_index 0
+  ca "/etc/ssl/demoCA/demoCA.crt"
+  cert "/etc/ssl/demoCA/demoCA.crt"
+  key "/etc/ssl/demoCA/demoCA.key"
 end
 
-template "/etc/rc.d/openvpn" do
-  owner "root"
-  group node['etc']['passwd']['root']['gid']
-  mode 0555
-  source "openvpn.rc.erb"
-  only_if {
-    node['platform'] == 'openbsd'
-  }
+openbsd_interface "tun0" do
+  inet  "10.7.30.10 255.255.255.0"
+  inet6 "2001:db8:7:30::1 64"
+  config "#{node['openvpn']['dir']}/gw.conf"
 end
 
-package node['openvpn']['package'] do
-  action :install
-  source "ports" if node['platform'] == "freebsd"
-end
-
-# generate dh params
-execute "openvpn-generate-dh-params" do
-  command "openssl dhparam -out %s %s" % [node['openvpn']['ssl']['dh'], node['openvpn']['ssl']['dh_bit']]
-  not_if do
-    ::File.exists?(node['openvpn']['ssl']['dh'])
-  end
+execute 'start tun0' do
+  command 'sh /etc/netstart tun0'
+  not_if '/sbin/ifconfig tun0'
 end

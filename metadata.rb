@@ -6,4 +6,6 @@ long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
 version          "0.0.1"
 name             "openvpn"
 
-depends "openbsd"
+%w{openbsd chef-openbsd}.each do |os|
+  depends os
+end

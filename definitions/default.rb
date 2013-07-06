@@ -23,6 +23,10 @@ define :openvpn_server,
        :ca        => nil,
        :cert      => nil,
        :key       => nil do
+  if node['platform'] != 'openbsd'
+    raise 'openvpn_server is supported on OpenBSD only'
+  end
+
   if params[:local_ip].nil? || params[:dev_index].nil?
     raise "local_ip and dev_index are required"
   end
@@ -45,17 +49,12 @@ define :openvpn_server,
     end
   end
 
-  devname = case node['platform']
-            when "openbsd"
-              "tun#{params[:dev_index]}"
-            else
-              "#{params[:dev_type]}#{params[:dev_index]}"
-            end
+  devname = "tun#{params[:dev_index]}"
 
   begin
-    t = resources("template[#{node['openvpn']['dir']}/#{params[:name]}.conf.erb]")
+    t = resources("template[#{node['openvpn']['dir']}/#{params[:name]}.conf]")
   rescue
-    t = template "#{node['openvpn']['dir']}/#{params[:name]}.conf.erb" do
+    t = template "#{node['openvpn']['dir']}/#{params[:name]}.conf" do
           owner node['openvpn']['uid']
           group node['openvpn']['gid']
           mode  0600
@@ -65,8 +64,9 @@ define :openvpn_server,
             :dev    => devname,
             :secret => secret
           })
-          source "server_openvpn.conf"
-          #notifies :restart, "service[#{node[:openvpn][:service]}]"
+          source "server_openvpn.conf.erb"
+          #notifies :restart, "service[#{node['openvpn']['service']}]"
+          # in server openvpn is started from hostname.if
         end
   end
 end
@@ -135,7 +135,14 @@ define :openvpn_client,
               end
   end
 
-  config = "#{node['openvpn']['dir']}/#{params['name']}_client.conf.erb"
+  config = "#{node['openvpn']['dir']}/#{params[:name]}_client.conf"
+  if node['platform'] =~ /^(free|open)bsd/
+    prefix = node['platform'] == "freebsd" ? "/usr/local" : ""
+    link "#{prefix}/etc/rc.d/openvpn_#{params[:name]}_client" do
+      to "#{prefix}/etc/rc.d/openvpn"
+    end
+  end
+
   begin
     t = resources("template[#{config}]")
   rescue
@@ -151,24 +158,14 @@ define :openvpn_client,
             :dev      => devname,
             :routes   => routes
           })
-          source "client_openvpn.conf"
-          #notifies :restart, "service[#{node[:openvpn][:service]}]"
+          source "client_openvpn.conf.erb"
+          notifies :restart, "service[openvpn_#{params[:name]}_client]"
         end
-  end
-  if node['platform'] =~ /^(free|open)bsd/
-    prefix = node['platform'] == "freebsd" ? "/usr/local" : ""
-    link "#{prefix}/etc/rc.d/openvpn_#{params[:name]}_client" do
-      to "#{prefix}/etc/rc.d/openvpn"
-    end
   end
 
   # registering service
   if params[:service]
     case node['platform']
-    when "openbsd"
-      openbsd_pkg_script "openvpn_#{params[:name]}_client" do
-        action [:enable, :start]
-      end
     when "freebsd"
       link "#{node['openvpn']['dir']}/openvpn_#{params[:name]}_client.conf" do
         to config
@@ -182,17 +179,10 @@ define :openvpn_client,
           }
         end
       end
-      service "openvpn_#{params[:name]}_client" do
-        action :enable
-      end
-      service "openvpn_#{params[:name]}_client" do
-        action :start
-        ignore_failure true
-      end
-    else
-      service node['openvpn']['service'] do
-        action [:enable, :start]
-      end
+    end
+
+    service "openvpn_#{params[:name]}_client" do
+      action [:enable, :start]
     end
   end
 end

@@ -13,30 +13,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+require 'chefspec'
 
-directory node['openvpn']['dir'] do
-  action :create
-end
-
-template "/etc/rc.d/openvpn" do
-  owner "root"
-  group node['etc']['passwd']['root']['gid']
-  mode 0555
-  source "openvpn.rc.erb"
-  only_if {
-    node['platform'] == 'openbsd'
+shared_context 'openbsd' do
+  let (:chef_run) {
+    ChefSpec::ChefRunner.new do |node|
+      node.automatic_attrs['platform'] = 'openbsd'
+      node.set['etc']['passwd']['root']['gid'] = 0
+    end
   }
 end
 
-package node['openvpn']['package'] do
-  action :install
-  source "ports" if node['platform'] == "freebsd"
+shared_context 'freebsd' do
+  let (:chef_run) {
+    ChefSpec::ChefRunner.new do |node|
+      node.automatic_attrs['platform'] = 'freebsd'
+      node.set['etc']['passwd']['root']['gid'] = 0
+    end
+  }
 end
 
-# generate dh params
-execute "openvpn-generate-dh-params" do
-  command "openssl dhparam -out %s %s" % [node['openvpn']['ssl']['dh'], node['openvpn']['ssl']['dh_bit']]
-  not_if do
-    ::File.exists?(node['openvpn']['ssl']['dh'])
-  end
+shared_context 'debian' do
+  let (:chef_run) {
+    ChefSpec::ChefRunner.new do |node|
+      node.automatic_attrs['platform'] = 'debian'
+      node.set['etc']['passwd']['root']['gid'] = 0
+    end
+  }
 end
